@@ -316,7 +316,7 @@ exports.rcpt = async function (next, connection, params) {
     }
 };
 
-exports.get_mx = async function (next, hmail, domain) {
+exports.get_mx = function (next, hmail, domain) {
     const plugin = this;
 
     // Get target MX for domain
