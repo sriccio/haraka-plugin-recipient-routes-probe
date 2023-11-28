@@ -4,49 +4,26 @@
 
 # haraka-plugin-recipient-routes-probe
 
-Clone me, to create a new Haraka plugin!
+Validate incoming mails recipients against defined target MX before accepting them. 
 
-# Template Instructions
+# Recipient validation with SMTP probing
 
-These instructions will not self-destruct after use. Use and destroy.
+This plugin lets you define delivery routes based on target domain and will probe the target MX for recipients validity before accepting to relay the mail.
 
-See also, [How to Write a Plugin](https://github.com/haraka/Haraka/wiki/Write-a-Plugin) and [Plugins.md](https://github.com/haraka/Haraka/blob/master/docs/Plugins.md) for additional plugin writing information.
+Recipient validation is done by connecting to target MX via SMTP and checking that it accepts the recipient, using EHLO, MAIL FROM and RCPT TO commands.
+This is kinda similar as what Postfix's [Recipient address verification](https://www.postfix.org/ADDRESS_VERIFICATION_README.html#recipient) provides.
 
-## Create a new repo for your plugin
+The validation result is then stored in a redis cache for a configurable amount of time. While this is optional, it is highly recommended as it will lower pressure on the target MXes.
 
-Haraka plugins are named like `haraka-plugin-something`. All the namespace after `haraka-plugin-` is yours for the taking. Please check the [Plugins](https://github.com/haraka/Haraka/blob/master/Plugins.md) page and a Google search to see what plugins already exist.
+## Requirements
 
-Once you've settled on a name, create the GitHub repo. On the repo's main page, click the _Clone or download_ button and copy the URL. Then paste that URL into a local ENV variable with a command like this:
+In order to successfully use this plugin, you will need:
 
-```sh
-export MY_GITHUB_ORG=haraka
-export MY_PLUGIN_NAME=haraka-plugin-SOMETHING
-```
+- A working Haraka instance (obviously)
+- Haraka [Outbound mail](https://haraka.github.io/core/Outbound) enabled and configured
+- A list of the domains you want to route mails for and their target MXes
 
-Clone and rename the recipient-routes-probe repo:
-
-```sh
-git clone git@github.com:haraka/haraka-plugin-recipient-routes-probe.git
-mv haraka-plugin-recipient-routes-probe $MY_PLUGIN_NAME
-cd $MY_PLUGIN_NAME
-git remote rm origin
-git remote add origin "git@github.com:$MY_GITHUB_ORG/$MY_PLUGIN_NAME.git"
-```
-
-Now you'll have a local git repo to begin authoring your plugin
-
-## rename boilerplate
-
-Replaces all uses of the word `recipient-routes-probe` with your plugin's name.
-
-./redress.sh [something]
-
-You'll then be prompted to update package.json and then force push this repo onto the GitHub repo you've created earlier.
-
-
-# Add your content here
-
-## INSTALL
+## Installation
 
 ```sh
 cd /path/to/local/haraka
@@ -55,22 +32,80 @@ echo "recipient-routes-probe" >> config/plugins
 service haraka restart
 ```
 
-### Configuration
+## Configuration
 
-If the default configuration is not sufficient, copy the config file from the distribution into your haraka config dir and then modify it:
+Copy the sample config file from the distribution into your haraka config dir and then modify them:
 
 ```sh
-cp node_modules/haraka-plugin-recipient-routes-probe/config/recipient-routes-probe.ini config/recipient-routes-probe.ini
-$EDITOR config/recipient-routes-probe.ini
+cp node_modules/haraka-plugin-recipient-routes-probe/config/recipient-routes-prob*.ini config/
 ```
 
-## USAGE
+The plugin is configured via two configuration files:
 
+- The main plugin configuration file `config/recipient-routes-probe.ini`
+
+```ini
+; Optional redis configuration for this particular plugin 
+; Defaults to global Haraka redis plugin configuration 
+
+[redis]
+;host=127.0.0.1
+;port=6379
+;password=changeme
+;database=0
+
+; SMTP probe settings (default: 5 seconds)
+[probe]
+;timeout=5
+
+; Redis caching settings
+[cache]
+;enabled=true
+;ttl=86400
+;negative_ttl=300
+```
+
+- The list of target domains and their MXes `config/recipient-routes-probe-domains.ini`
+
+```ini
+; Format is domain.tld=protocol://target_mx:target_port
+cooldomain.com=smtp://somemx.example.com:25
+nicedomain.com=lmtp://192.168.0.10:24
+
+; If protocol is omitted, it defaults to smtp
+greatdomain.com=othermx.example.com:25s to smtp
+somedomain.com=mx.example.com:25
+```
+
+## Redis caching
+
+Cached redis entries consists of redis keys in the format of `probe:recipient@domain.tld`.
+The value of the redis key contains the result code (numeric value of either `OK`, `DENY`, `DENYSOFT` code) associated with the message returned by the target MXes.
+
+Additionally, the keys are given a time to live in seconds, configurable in `[cache]` section of main config file.
+Redis will then automatically expire keys that are older than their TTL in order to maintain fresh clean cache.
+
+You can of course list and delete entries from the cache manually, if you need to. Below an example with `redis-cli`
+
+```sh
+select 0
+127.0.0.1:6379[0]> KEYS probe:*
+1) "probe::patrick@cooldomain.com"
+2) "probe::badguy@nicedomain.com"
+3) "probe::tom@greatdomain.com"
+4) "probe::news@fundomain.com"
+
+127.0.0.1:6379[0]> DEL probe::badguy@nicedomain.com
+(integer) 1
+```
+# Author and credits
+
+Written by Sébastien Riccio. Most of the code is outrageously inspired by Matt Simerson's [recipient-routes](https://github.com/haraka/haraka-plugin-recipient-routes) plugin though. Thanks ! 
 
 <!-- leave these buried at the bottom of the document -->
-[ci-img]: https://github.com/haraka/haraka-plugin-recipient-routes-probe/actions/workflows/ci.yml/badge.svg
-[ci-url]: https://github.com/haraka/haraka-plugin-recipient-routes-probe/actions/workflows/ci.yml
-[clim-img]: https://codeclimate.com/github/haraka/haraka-plugin-recipient-routes-probe/badges/gpa.svg
-[clim-url]: https://codeclimate.com/github/haraka/haraka-plugin-recipient-routes-probe
+[ci-img]: https://github.com/sriccio/haraka-plugin-recipient-routes-probe/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/sriccio/haraka-plugin-recipient-routes-probe/actions/workflows/ci.yml
+[clim-img]: https://codeclimate.com/github/sriccio/haraka-plugin-recipient-routes-probe/badges/gpa.svg
+[clim-url]: https://codeclimate.com/github/sriccio/haraka-plugin-recipient-routes-probe
 [npm-img]: https://nodei.co/npm/haraka-plugin-recipient-routes-probe.png
 [npm-url]: https://www.npmjs.com/package/haraka-plugin-recipient-routes-probe
