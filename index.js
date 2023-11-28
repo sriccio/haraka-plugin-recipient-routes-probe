@@ -317,21 +317,19 @@ exports.rcpt = async function (next, connection, params) {
 };
 
 exports.get_mx = function (next, hmail, domain) {
-    const plugin = this;
-
     // Get target MX for domain
     try {
-        const target_mx = plugin.parse_mx(plugin.domains_list[domain]);
+        const target_mx = this.parse_mx(this.domains_list[domain]);
 
         if (target_mx) {
-            plugin.loginfo(`Target MX found for domain ${domain} via ${target_mx.exchange}:${target_mx.port}`);
+            this.loginfo(`Target MX found for domain ${domain} via ${target_mx.exchange}:${target_mx.port}`);
             return next(OK, `${target_mx.exchange}:${target_mx.port}`);
         } else {
-            plugin.logerror(`No target MX found for domain ${domain}`);
+            this.logerror(`No target MX found for domain ${domain}`);
             return next();
         }
     } catch (err) {
-        plugin.logerror(err);
+        this.logerror(err);
         return next();
     }
 };
