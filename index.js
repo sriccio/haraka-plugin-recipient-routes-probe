@@ -323,13 +323,13 @@ exports.get_mx = function (next, hmail, domain) {
 
         if (target_mx) {
             this.loginfo(`Target MX found for domain ${domain} via ${target_mx.exchange}:${target_mx.port}`);
-            return next(OK, `${target_mx.exchange}:${target_mx.port}`);
+            next(OK, `${target_mx.exchange}:${target_mx.port}`);
         } else {
             this.logerror(`No target MX found for domain ${domain}`);
-            return next();
+            next();
         }
     } catch (err) {
         this.logerror(err);
-        return next();
+        next();
     }
 };
