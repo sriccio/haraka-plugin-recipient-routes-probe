@@ -1,7 +1,6 @@
 "use strict";
 
-// TODO: Replace absolute path
-const smtp_client_module = require("/usr/lib/node_modules/Haraka/smtp_client.js");
+const smtp_client_module = haraka_require("smtp_client.js");
 const urlparser = require("url");
 const cache_key_prefix = "probe:";
 
