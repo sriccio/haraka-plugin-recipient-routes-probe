@@ -1,11 +1,11 @@
 "use strict";
 
-const smtp_client_module = haraka_require("smtp_client.js");
 const urlparser = require("url");
 const cache_key_prefix = "probe:";
 
 exports.register = function () {
     const plugin = this;
+    plugin.smtp_client_module = this.haraka_require("smtp_client.js");
 
     // We need the redis plugin
     plugin.inherits("haraka-plugin-redis");
@@ -169,7 +169,7 @@ exports.probe_mx_for_recipient = async function (connection, cfg, address) {
     try {
         // Return SMTP probe result
         return await new Promise((resolve, reject) => {
-            smtp_client_module.get_client_plugin(plugin, connection, cfg, (err, smtp_client) => {
+            plugin.smtp_client_module.get_client_plugin(plugin, connection, cfg, (err, smtp_client) => {
                 // Catch any error
                 if (err) {
                     connection.logerror(`SMTP Probe err: ${err}`, plugin);
