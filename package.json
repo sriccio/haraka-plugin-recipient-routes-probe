@@ -1,6 +1,6 @@
 {
   "name": "haraka-plugin-recipient-routes-probe",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Haraka plugin to probe target MXes via SMTP/LMTP for recipients validity",
   "main": "index.js",
   "scripts": {
@@ -33,5 +33,8 @@
     "mocha": "10",
     "node-gyp": "^10.0.1",
     "prettier": "3.1.0"
+  },
+  "dependencies": {
+    "haraka-plugin-redis": "^2.0.5"
   }
 }
