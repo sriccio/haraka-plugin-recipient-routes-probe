@@ -321,10 +321,12 @@ exports.get_mx = function (next, hmail, domain) {
         const target_mx = this.parse_mx(this.domains_list[domain]);
 
         if (target_mx) {
-            this.loginfo(`Target MX found for domain ${domain} via ${target_mx.exchange}:${target_mx.port}`);
+            this.loginfo(
+                `[${hmail.todo.uuid}] Target MX found for domain ${domain} via ${target_mx.exchange}:${target_mx.port}`,
+            );
             next(OK, `${target_mx.exchange}:${target_mx.port}`);
         } else {
-            this.logerror(`No target MX found for domain ${domain}`);
+            this.logerror(`[${hmail.todo.uuid}] No target MX found for domain ${domain}`);
             next();
         }
     } catch (err) {
